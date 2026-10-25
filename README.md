@@ -104,18 +104,19 @@ Penalties stack, so a third song by the same artist loses 1.5. The penalty shows
    python -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
-2. Install dependencies
+2. Install dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 3. Run the app:
 
-```bash
-python -m src.main
-```
+   ```bash
+   python -m src.main
+   ```
 
 ### Running Tests
 
@@ -129,175 +130,85 @@ You can add more tests in `tests/test_recommender.py`.
 
 ---
 
-## Sample Recommendation Output
-
-Output of `python -m src.main` for a pop / happy listener with a target energy of 0.80:
-
-```
-Loaded songs: 18
-
-============================================================
-                   TOP 5 RECOMMENDATIONS
-             profile: pop / happy / energy 0.80
-============================================================
-
-#1  Sunrise City by Neon Echo
-    Score: 3.98 / 4.00
-    Why:
-      - genre match: pop (+2.0)
-      - mood match: happy (+1.0)
-      - energy 0.82 vs target 0.80 (+0.98)
-
-#2  Gym Hero by Max Pulse
-    Score: 2.87 / 4.00
-    Why:
-      - genre match: pop (+2.0)
-      - energy 0.93 vs target 0.80 (+0.87)
-
-#3  Rooftop Lights by Indigo Parade
-    Score: 1.96 / 4.00
-    Why:
-      - mood match: happy (+1.0)
-      - energy 0.76 vs target 0.80 (+0.96)
-
-#4  Bass Cathedral by Kilo Verse
-    Score: 1.00 / 4.00
-    Why:
-      - energy 0.80 vs target 0.80 (+1.00)
-
-#5  Night Drive Loop by Neon Echo
-    Score: 0.95 / 4.00
-    Why:
-      - energy 0.75 vs target 0.80 (+0.95)
-
-============================================================
-```
-
----
-
 ## Recommendations for Multiple Profiles
 
-Output of `python -m src.main` for the three taste profiles (top 5 each):
+`python -m src.main` prints the top 5 for each taste profile as a table. The Reasons column shows exactly how each score was built, including diversity penalties (`artist repeat`, `genre repeat`):
 
 ### High-Energy Pop
 
 ```
-============================================================
-                      HIGH-ENERGY POP                       
-prefs: {'genre': 'pop', 'mood': 'happy', 'energy': 0.9, 'target_valence': 0.85, 'target_acousticness': 0.15, 'likes_acoustic': False}
-============================================================
-
-#1  Sunrise City by Neon Echo
-    Score: 3.92 / 4.00
-    Why:
-      - genre match: pop (+2.0)
-      - mood match: happy (+1.0)
-      - energy 0.82 vs target 0.90 (+0.92)
-
-#2  Gym Hero by Max Pulse
-    Score: 2.97 / 4.00
-    Why:
-      - genre match: pop (+2.0)
-      - energy 0.93 vs target 0.90 (+0.97)
-
-#3  Rooftop Lights by Indigo Parade
-    Score: 1.86 / 4.00
-    Why:
-      - mood match: happy (+1.0)
-      - energy 0.76 vs target 0.90 (+0.86)
-
-#4  Storm Runner by Voltline
-    Score: 0.99 / 4.00
-    Why:
-      - energy 0.91 vs target 0.90 (+0.99)
-
-#5  Solar Parade by Calle Sol
-    Score: 0.98 / 4.00
-    Why:
-      - energy 0.88 vs target 0.90 (+0.98)
-
-============================================================
++---+------------------+---------+--------------------------------------+
+| # | Song             | Score/4 | Reasons                              |
++---+------------------+---------+--------------------------------------+
+| 1 | Sunrise City     | 3.92    | - genre match: pop (+2.0)            |
+|   | by Neon Echo     |         | - mood match: happy (+1.0)           |
+|   |                  |         | - energy 0.82 vs target 0.90 (+0.92) |
++---+------------------+---------+--------------------------------------+
+| 2 | Gym Hero         | 2.72    | - genre match: pop (+2.0)            |
+|   | by Max Pulse     |         | - energy 0.93 vs target 0.90 (+0.97) |
+|   |                  |         | - genre repeat: pop (-0.25)          |
++---+------------------+---------+--------------------------------------+
+| 3 | Rooftop Lights   | 1.86    | - mood match: happy (+1.0)           |
+|   | by Indigo Parade |         | - energy 0.76 vs target 0.90 (+0.86) |
++---+------------------+---------+--------------------------------------+
+| 4 | Storm Runner     | 0.99    | - energy 0.91 vs target 0.90 (+0.99) |
+|   | by Voltline      |         |                                      |
++---+------------------+---------+--------------------------------------+
+| 5 | Solar Parade     | 0.98    | - energy 0.88 vs target 0.90 (+0.98) |
+|   | by Calle Sol     |         |                                      |
++---+------------------+---------+--------------------------------------+
 ```
 
 ### Chill Lofi
 
 ```
-============================================================
-                         CHILL LOFI                         
-prefs: {'genre': 'lofi', 'mood': 'chill', 'energy': 0.3, 'target_valence': 0.55, 'target_acousticness': 0.75, 'likes_acoustic': True}
-============================================================
-
-#1  Library Rain by Paper Lanterns
-    Score: 3.95 / 4.00
-    Why:
-      - genre match: lofi (+2.0)
-      - mood match: chill (+1.0)
-      - energy 0.35 vs target 0.30 (+0.95)
-
-#2  Midnight Coding by LoRoom
-    Score: 3.88 / 4.00
-    Why:
-      - genre match: lofi (+2.0)
-      - mood match: chill (+1.0)
-      - energy 0.42 vs target 0.30 (+0.88)
-
-#3  Focus Flow by LoRoom
-    Score: 2.90 / 4.00
-    Why:
-      - genre match: lofi (+2.0)
-      - energy 0.40 vs target 0.30 (+0.90)
-
-#4  Spacewalk Thoughts by Orbit Bloom
-    Score: 1.98 / 4.00
-    Why:
-      - mood match: chill (+1.0)
-      - energy 0.28 vs target 0.30 (+0.98)
-
-#5  Porch Light Lullaby by Wren and Willow
-    Score: 1.00 / 4.00
-    Why:
-      - energy 0.30 vs target 0.30 (+1.00)
-
-============================================================
++---+---------------------+---------+--------------------------------------+
+| # | Song                | Score/4 | Reasons                              |
++---+---------------------+---------+--------------------------------------+
+| 1 | Library Rain        | 3.95    | - genre match: lofi (+2.0)           |
+|   | by Paper Lanterns   |         | - mood match: chill (+1.0)           |
+|   |                     |         | - energy 0.35 vs target 0.30 (+0.95) |
++---+---------------------+---------+--------------------------------------+
+| 2 | Midnight Coding     | 3.63    | - genre match: lofi (+2.0)           |
+|   | by LoRoom           |         | - mood match: chill (+1.0)           |
+|   |                     |         | - energy 0.42 vs target 0.30 (+0.88) |
+|   |                     |         | - genre repeat: lofi (-0.25)         |
++---+---------------------+---------+--------------------------------------+
+| 3 | Spacewalk Thoughts  | 1.98    | - mood match: chill (+1.0)           |
+|   | by Orbit Bloom      |         | - energy 0.28 vs target 0.30 (+0.98) |
++---+---------------------+---------+--------------------------------------+
+| 4 | Focus Flow          | 1.65    | - genre match: lofi (+2.0)           |
+|   | by LoRoom           |         | - energy 0.40 vs target 0.30 (+0.90) |
+|   |                     |         | - artist repeat: LoRoom (-0.75)      |
+|   |                     |         | - genre repeat: lofi (-0.50)         |
++---+---------------------+---------+--------------------------------------+
+| 5 | Porch Light Lullaby | 1.00    | - energy 0.30 vs target 0.30 (+1.00) |
+|   | by Wren and Willow  |         |                                      |
++---+---------------------+---------+--------------------------------------+
 ```
 
 ### Deep Intense Rock
 
 ```
-============================================================
-                     DEEP INTENSE ROCK                      
-prefs: {'genre': 'rock', 'mood': 'intense', 'energy': 0.92, 'target_valence': 0.35, 'target_acousticness': 0.1, 'likes_acoustic': False}
-============================================================
-
-#1  Storm Runner by Voltline
-    Score: 3.99 / 4.00
-    Why:
-      - genre match: rock (+2.0)
-      - mood match: intense (+1.0)
-      - energy 0.91 vs target 0.92 (+0.99)
-
-#2  Gym Hero by Max Pulse
-    Score: 1.99 / 4.00
-    Why:
-      - mood match: intense (+1.0)
-      - energy 0.93 vs target 0.92 (+0.99)
-
-#3  Pulse Garden by Fractal Bloom
-    Score: 0.97 / 4.00
-    Why:
-      - energy 0.95 vs target 0.92 (+0.97)
-
-#4  Solar Parade by Calle Sol
-    Score: 0.96 / 4.00
-    Why:
-      - energy 0.88 vs target 0.92 (+0.96)
-
-#5  Iron Requiem by Grave Signal
-    Score: 0.95 / 4.00
-    Why:
-      - energy 0.97 vs target 0.92 (+0.95)
-
-============================================================
++---+------------------+---------+--------------------------------------+
+| # | Song             | Score/4 | Reasons                              |
++---+------------------+---------+--------------------------------------+
+| 1 | Storm Runner     | 3.99    | - genre match: rock (+2.0)           |
+|   | by Voltline      |         | - mood match: intense (+1.0)         |
+|   |                  |         | - energy 0.91 vs target 0.92 (+0.99) |
++---+------------------+---------+--------------------------------------+
+| 2 | Gym Hero         | 1.99    | - mood match: intense (+1.0)         |
+|   | by Max Pulse     |         | - energy 0.93 vs target 0.92 (+0.99) |
++---+------------------+---------+--------------------------------------+
+| 3 | Pulse Garden     | 0.97    | - energy 0.95 vs target 0.92 (+0.97) |
+|   | by Fractal Bloom |         |                                      |
++---+------------------+---------+--------------------------------------+
+| 4 | Solar Parade     | 0.96    | - energy 0.88 vs target 0.92 (+0.96) |
+|   | by Calle Sol     |         |                                      |
++---+------------------+---------+--------------------------------------+
+| 5 | Iron Requiem     | 0.95    | - energy 0.97 vs target 0.92 (+0.95) |
+|   | by Grave Signal  |         |                                      |
++---+------------------+---------+--------------------------------------+
 ```
 
 ---
@@ -309,7 +220,7 @@ prefs: {'genre': 'rock', 'mood': 'intense', 'energy': 0.92, 'target_valence': 0.
 I ran the three profiles above plus ten edge cases from `src/main.py`. The three realistic listeners got sensible lists with no songs shared between Chill Lofi and Deep Intense Rock. The edge cases showed the weak spots:
 
 - **Classical fan who wants high energy.** The quiet *Nocturne in Grey* ranked #1 (2.32). The other four songs were loud songs from unrelated genres.
-- **Lofi fan who asks for "intense" at 0.95.** Three quiet lofi songs (about 2.4 each) beat two loud intense songs that matched mood and energy perfectly (about 1.97).
+- **Lofi fan who asks for "intense" at 0.95.** Two quiet lofi songs (2.47 and 2.15) beat two loud intense songs that matched mood and energy almost perfectly (1.98 and 1.96). The third lofi song fell to #5 (1.20) because of the diversity penalties.
 - **k-pop fan.** The genre is not in the catalog, so the best possible score was 2.0.
 - **"Pop " with a capital letter and a space.** Same list as "pop", so the typo cleanup works.
 - **Energy of 5.0 (a typo).** Every song got 0 energy points. No error was shown.
@@ -321,7 +232,7 @@ I ran the three profiles above plus ten edge cases from `src/main.py`. The three
 I changed `GENRE_POINTS` for one run, without saving the change. Results:
 
 - **High-Energy Pop:** *Gym Hero* fell from #2 to #3. *Rooftop Lights* (happy, but indie pop) rose from #3 to #2. That is closer to what a "happy pop" fan expects.
-- **Chill Lofi:** *Spacewalk Thoughts* (chill, but ambient) moved from #4 to #3 and passed *Focus Flow*.
+- **Chill Lofi:** *Focus Flow* (lofi, but not chill, and a repeat artist) dropped out of the top 5. *Porch Light Lullaby* moved up to #4 and *Coffee Shop Stories* entered at #5.
 - **Deep Intense Rock:** the same top 5 as before.
 - **Classical fan who wants 0.90:** *Nocturne in Grey* fell out of the top 5. The list became all loud songs. That fits the request for high energy, but the listener's favorite genre vanished.
 - **Calm rock fan (energy 0.30):** *Storm Runner* still ranked #1 at 1.89, because the rock and intense matches still outweighed the energy gap.
@@ -348,7 +259,7 @@ I did not test adding tempo or valence to the score. The scorer does not use the
 - **Exact matches only.** "pop" and "indie pop" count as different genres. "chill" and "relaxed" count as different moods.
 - **Unused data.** Valence, tempo, danceability and acousticness are loaded but ignored. The `likes_acoustic` setting does nothing.
 - **Quiet failures.** Unknown genres or moods, and energy outside 0 to 1, still return a confident-looking list with no warning.
-- **No diversity.** The top 5 can repeat one genre or artist.
+- **Only a light diversity fix.** The diversity penalty (see above) discourages repeats, but it is small. With a tiny catalog, the top 5 can still repeat an artist or genre when nothing else scores well.
 - **No lyrics, language or listening history.** The system only sees a few labels and numbers. It cannot learn from what a listener plays or skips.
 - **Filter bubble.** It only rewards what the listener already said they like, so it will not help them find something new.
 

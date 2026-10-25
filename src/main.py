@@ -9,6 +9,8 @@ You will implement the functions in recommender.py:
 - recommend_songs
 """
 
+import textwrap
+
 try:
     from src.recommender import load_songs, recommend_songs  # python -m src.main
 except ModuleNotFoundError:
@@ -89,6 +91,35 @@ EDGE_CASE_PROFILES = {
 }
 
 
+def format_table(headers: list, rows: list, max_widths: list) -> str:
+    """Render rows as an ASCII grid; cells wrap to max_widths and may hold newlines."""
+    def wrap(cell: str, w: int) -> list:
+        lines = []
+        for line in cell.split("\n"):
+            # hanging indent keeps wrapped bullet text aligned under its "- "
+            indent = "  " if line.startswith("- ") else ""
+            lines += textwrap.wrap(line, w, subsequent_indent=indent) or [""]
+        return lines
+
+    wrapped = [[wrap(c, w) for c, w in zip(row, max_widths)] for row in rows]
+    widths = [
+        max([len(h)] + [len(l) for r in wrapped for l in r[i]])
+        for i, h in enumerate(headers)
+    ]
+    sep = "+" + "+".join("-" * (w + 2) for w in widths) + "+"
+
+    def line(cells: list) -> str:
+        return "| " + " | ".join(c.ljust(w) for c, w in zip(cells, widths)) + " |"
+
+    out = [sep, line(headers), sep]
+    for r in wrapped:
+        height = max(len(c) for c in r)
+        for n in range(height):
+            out.append(line([c[n] if n < len(c) else "" for c in r]))
+        out.append(sep)
+    return "\n".join(out)
+
+
 def print_recommendations(name: str, user_prefs: dict, songs: list, width: int = 60) -> None:
     print()
     print("=" * width)
@@ -103,12 +134,16 @@ def print_recommendations(name: str, user_prefs: dict, songs: list, width: int =
         print("\n" + "=" * width)
         return
 
+    rows = []
     for rank, (song, score, explanation) in enumerate(recommendations, start=1):
-        print(f"\n#{rank}  {song['title']} by {song['artist']}")
-        print(f"    Score: {score:.2f} / 4.00")
-        print("    Why:")
-        for reason in explanation.split("; "):
-            print(f"      - {reason}")
+        rows.append([
+            str(rank),
+            f"{song['title']}\nby {song['artist']}",
+            f"{score:.2f}",
+            "\n".join(f"- {reason}" for reason in explanation.split("; ")),
+        ])
+    print()
+    print(format_table(["#", "Song", "Score/4", "Reasons"], rows, max_widths=[3, 24, 7, 44]))
 
     print("\n" + "=" * width)
 
