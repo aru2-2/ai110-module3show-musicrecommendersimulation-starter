@@ -19,7 +19,17 @@ Replace this paragraph with your own summary of what your version does.
 
 Real-world platforms like Spotify and YouTube combine two signals. **Collaborative filtering** learns from millions of users' behavior (likes, skips, replays, playlist adds) to find songs that people with similar taste enjoyed. **Content-based filtering** compares a song's attributes, such as tempo, energy, and mood, to a listener's profile. Production systems blend both, add context like time of day, and use a second ranking stage to balance relevance, freshness, and variety.
 
-This simulation is a **content-based recommender only**. It has no data about other users and no skip or like history, so it prioritizes how closely each song's *attributes* match one user's *stated preferences*. **Energy** counts most, because it is the strongest separator in the catalog, followed by **mood** and **genre** matches, with **valence** and **acousticness** as secondary refinements. Each song gets a weighted score from 0 to 1, and the songs are then sorted to return the top K with an explanation for each.
+This simulation is a **content-based recommender only**. It has no data about other users and no skip or like history, so it prioritizes how closely each song's *attributes* match one user's *stated preferences*. Each song gets a score from 0 to 4.0 based on **genre**, **mood**, and **energy**. The songs are then sorted to return the top K with an explanation for each.
+
+### Data flow
+
+```
+INPUT                    PROCESS (the loop)                        OUTPUT
+user_prefs               load_songs("data/songs.csv")
+{genre, mood, energy} ─► for each song in the CSV:             ─► sort by score (desc)
+                           score_song(user_prefs, song)            take the first K
+                           -> (score, reasons)                     -> Top K (song, score, explanation)
+```
 
 ### Song features
 
@@ -28,11 +38,8 @@ This simulation is a **content-based recommender only**. It has no data about ot
 | `id`, `title`, `artist` | int / str | Identification and display only, not scored |
 | `genre` | categorical | Match bonus against `favorite_genre` |
 | `mood` | categorical | Match bonus against `favorite_mood` |
-| `energy` | float 0-1 | Closeness to `target_energy` (highest weight) |
-| `valence` | float 0-1 | Closeness to the user's preferred positivity |
-| `acousticness` | float 0-1 | Closeness to the user's acoustic preference |
-| `tempo_bpm` | float | Optional, and only after normalizing (it overlaps with energy) |
-| `danceability` | float 0-1 | Optional, low priority |
+| `energy` | float 0-1 | Closeness to `target_energy` |
+| `valence`, `acousticness`, `tempo_bpm`, `danceability` | float | Loaded but **not scored yet** (possible future refinements) |
 
 ### UserProfile features
 
@@ -41,15 +48,33 @@ This simulation is a **content-based recommender only**. It has no data about ot
 | `favorite_genre` | str | `Song.genre` (exact match) |
 | `favorite_mood` | str | `Song.mood` (exact match) |
 | `target_energy` | float 0-1 | `Song.energy` (closeness) |
-| `likes_acoustic` | bool | `Song.acousticness` (`True` targets high acousticness, `False` targets low) |
+| `likes_acoustic` | bool | Stored on the profile but **not used in scoring yet** |
 
 ### Scoring rule (one song)
 
-Numeric features reward **closeness to the user's target**, not higher or lower values: `similarity = 1 - |song_value - target|`. Categorical features score 1 for a match and 0 otherwise. The final score is a weighted sum of these similarities, with weights that sum to 1. Mood is weighted above genre, because mood describes how a song feels and genre is sparse in a small catalog.
+Each song is judged on its own against the user's preferences. Categorical features (genre, mood) are all-or-nothing: a match earns its points and a miss earns none. Energy, the only numeric feature scored, rewards **closeness to the user's target**, not higher or lower values: `similarity = 1 - |song_energy - target_energy|`. The final score is the sum of these parts, with genre weighted highest (2.0), then mood (1.0), then energy (up to 1.0). The recipe below gives the exact points.
+
+### Algorithm Recipe (max score 4.0)
+
+| Rule | Points |
+|---|---|
+| Genre matches `favorite_genre` (exact) | **+2.0** |
+| Mood matches `favorite_mood` (exact) | **+1.0** |
+| Energy similarity: `1 - abs(song.energy - target_energy)`, floored at 0 | **+0.0 to +1.0** |
+
+`score_song` also returns a plain-language reason for each part that contributed.
 
 ### Ranking rule (whole list)
 
-Every song in the catalog is scored, then the songs are sorted by score in descending order and the top K are returned, each with the reasons behind its score.
+A single song's score says nothing on its own, so the system scores **every** song in the catalog, sorts by score in descending order, and returns the top K, each with the reasons behind its score. Ties keep CSV order, because Python's sort is stable.
+
+### Expected biases
+
+- **Genre over-prioritization.** A genre match is worth 2.0, which is half the maximum score. A same-genre song with the wrong mood and a poor energy fit (about 2.0 to 2.5) can still beat an off-genre song that matches the mood and energy exactly (at most 2.0). Great songs from adjacent genres can be buried.
+- **Exact-match brittleness.** `rock` vs `metal`, or `chill` vs `relaxed`, count as total misses. There is no notion of similar genres or moods.
+- **Energy is the only graded signal.** Songs that tie on genre and mood are separated only by energy. Valence, acousticness, tempo, and danceability are ignored, so two songs with very different feel can score the same.
+- **Small, uneven catalog.** Genres with only one or two songs will fill the top K with near-misses from other genres, and users with a rare favorite genre get weaker results.
+- **Filter bubble.** Scoring rewards similarity to stated tastes, so the system never surfaces anything unfamiliar and cannot help a user discover new genres.
 
 ---
 
