@@ -17,17 +17,39 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real-world platforms like Spotify and YouTube combine two signals. **Collaborative filtering** learns from millions of users' behavior (likes, skips, replays, playlist adds) to find songs that people with similar taste enjoyed. **Content-based filtering** compares a song's attributes, such as tempo, energy, and mood, to a listener's profile. Production systems blend both, add context like time of day, and use a second ranking stage to balance relevance, freshness, and variety.
 
-Some prompts to answer:
+This simulation is a **content-based recommender only**. It has no data about other users and no skip or like history, so it prioritizes how closely each song's *attributes* match one user's *stated preferences*. **Energy** counts most, because it is the strongest separator in the catalog, followed by **mood** and **genre** matches, with **valence** and **acousticness** as secondary refinements. Each song gets a weighted score from 0 to 1, and the songs are then sorted to return the top K with an explanation for each.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+### Song features
 
-You can include a simple diagram or bullet list if helpful.
+| Feature | Type | Role in scoring |
+|---|---|---|
+| `id`, `title`, `artist` | int / str | Identification and display only, not scored |
+| `genre` | categorical | Match bonus against `favorite_genre` |
+| `mood` | categorical | Match bonus against `favorite_mood` |
+| `energy` | float 0-1 | Closeness to `target_energy` (highest weight) |
+| `valence` | float 0-1 | Closeness to the user's preferred positivity |
+| `acousticness` | float 0-1 | Closeness to the user's acoustic preference |
+| `tempo_bpm` | float | Optional, and only after normalizing (it overlaps with energy) |
+| `danceability` | float 0-1 | Optional, low priority |
+
+### UserProfile features
+
+| Feature | Type | Compared against |
+|---|---|---|
+| `favorite_genre` | str | `Song.genre` (exact match) |
+| `favorite_mood` | str | `Song.mood` (exact match) |
+| `target_energy` | float 0-1 | `Song.energy` (closeness) |
+| `likes_acoustic` | bool | `Song.acousticness` (`True` targets high acousticness, `False` targets low) |
+
+### Scoring rule (one song)
+
+Numeric features reward **closeness to the user's target**, not higher or lower values: `similarity = 1 - |song_value - target|`. Categorical features score 1 for a match and 0 otherwise. The final score is a weighted sum of these similarities, with weights that sum to 1. Mood is weighted above genre, because mood describes how a song feels and genre is sparse in a small catalog.
+
+### Ranking rule (whole list)
+
+Every song in the catalog is scored, then the songs are sorted by score in descending order and the top K are returned, each with the reasons behind its score.
 
 ---
 
