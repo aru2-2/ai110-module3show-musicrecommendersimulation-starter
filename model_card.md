@@ -2,20 +2,19 @@
 
 ## 1. Model Name  
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
+**VibeMatch 1.0**
+
+A small, rule-based song recommender. It scores songs by genre, mood and energy.
 
 ---
 
 ## 2. Intended Use  
 
-Describe what your recommender is designed to do and who it is for. 
+**What it does.** It suggests the top 5 songs from a small catalog. Each song comes with a score and a short reason.
 
-Prompts:  
+**What it assumes about the listener.** It assumes people can name one favorite genre, one favorite mood and a target energy level. It also assumes taste stays the same from song to song. Real taste is messier than that.
 
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**Who it is for.** This is a classroom project. It is meant for learning how recommenders work. It is not meant for real users or a real music app.
 
 ---
 
@@ -43,26 +42,35 @@ The three parts are added together. Genre counts the most because it is the stro
 
 ## 4. Data  
 
-Describe the dataset the model uses.  
+**Size.** The catalog has 18 songs in `data/songs.csv`.
 
-Prompts:  
+**What each song has.** Title, artist, genre, mood, energy, tempo, valence (how positive it sounds), danceability and acousticness. The scorer only uses genre, mood and energy.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+**Genres.** There are 15 genres. Lofi has 3 songs and pop has 2. The other 13 have one song each. Examples are rock, jazz, metal, classical, folk, edm and reggaeton.
+
+**Moods.** There are 14 moods. Chill has 3 songs, happy and intense have 2 each, and the rest have one each.
+
+**What is missing.**
+- Many genres, such as k-pop, blues and punk.
+- Songs with middle energy. Only two songs fall between 0.45 and 0.70.
+- Quiet songs that are not acoustic, and loud songs that are acoustic. Energy and acousticness move together in this data.
+- Any songs in languages or styles outside a mostly Western mix.
 
 ---
 
 ## 5. Strengths  
 
-Where does your system seem to work well  
+**It works well for listeners with a clear, common taste.** Chill Lofi, High-Energy Pop and Deep Intense Rock all got lists that felt right. Their #1 songs scored 3.95, 3.92 and 3.99 out of 4.
 
-Prompts:  
+**It separates opposite tastes.** The lofi list and the rock list share no songs. The quiet listener gets quiet songs. The loud listener gets loud songs.
 
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+**It explains itself.** Every result shows a score and the reasons, like "genre match: pop (+2.0)". You can check why a song was picked.
+
+**It forgives small typos.** "Pop " with a capital letter and a space gives the same list as "pop".
+
+**It rejects bad input.** An empty profile, or an energy like "high", is refused with a clear message.
+
+**Its mistakes are easy to see.** Because the rules are simple, I could trace every odd result back to a rule. That made the problems easy to find.
 
 ---
 
@@ -113,23 +121,28 @@ Gym Hero is a pop song, and pop is worth 2 points, the biggest prize in the syst
 
 ## 8. Future Work  
 
-Ideas for how you would improve the model next.  
+**Use more of the data.** Score acousticness, valence and tempo too. Make the "likes acoustic" setting actually work.
 
-Prompts:  
+**Give partial credit.** Let "pop" earn some points for "indie pop". Let "chill" earn some points for "relaxed". Right now close matches count as zero.
 
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+**Make energy matter more.** Raise its weight, or punish big gaps more. Then a calm listener would not get a loud song just because the genre matched.
+
+**Mix up the top 5.** Limit how many songs from one genre or artist can appear. That would stop lists like three lofi songs in a row, two of them by the same artist.
+
+**Add more songs.** More songs per genre, more middle-energy songs and more genres.
+
+**Be honest about gaps.** If the genre or mood is not in the catalog, say so. Do not quietly return a list.
+
+**Handle mixed taste.** Let a listener pick two or three genres, or say "calm in the morning, loud at the gym".
+
+**Explain better.** Say what was missing too, such as "no k-pop songs in the catalog".
 
 ---
 
 ## 9. Personal Reflection  
 
-A few sentences about your experience.  
+**What I learned.** A recommender is really a set of choices about what matters. In this music recommender simulation, I chose genre to be worth 2 points, and that one choice shaped almost every list. Clearly, I noticed that small weights have big effects.
 
-Prompts:  
+**What surprised me.** A song that looked wrong, Gym Hero for "Happy Pop" fans, was actually correct under my rules. I realized that the rules were the problem, not a bug. I also learned that the data matters as much as the math. With one rock song in the catalog, a rock fan can only ever get one good match.
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+**How it changed my view.** When a music app shows me the same kind of song again and again, I now wonder what it is rewarding. It may be doing the same thing my scorer does. It might be sticking to my "favorite genre" and ignoring how I feel today. I also see why apps need lots of songs and lots of signals, not just a few labels, to provide more accurate recommendations for their users.

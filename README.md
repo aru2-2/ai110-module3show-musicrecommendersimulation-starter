@@ -2,16 +2,7 @@
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+My version, **VibeMatch 1.0**, is a small content-based recommender. It reads a catalog of 18 songs from `data/songs.csv`. A listener gives a favorite genre, a favorite mood and a target energy. Every song gets a score out of 4.0: up to 2.0 for genre, 1.0 for mood and 1.0 for how close its energy is to the target. The top 5 songs are shown, each with plain-language reasons for its score. I tested it on three realistic listeners and ten tricky edge cases to see where the rules work and where they break.
 
 ---
 
@@ -288,38 +279,62 @@ prefs: {'genre': 'rock', 'mood': 'intense', 'energy': 0.92, 'target_valence': 0.
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+### 1. Different types of users
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+I ran the three profiles above plus ten edge cases from `src/main.py`. The three realistic listeners got sensible lists with no songs shared between Chill Lofi and Deep Intense Rock. The edge cases showed the weak spots:
+
+- **Classical fan who wants high energy.** The quiet *Nocturne in Grey* ranked #1 (2.32). The other four songs were loud songs from unrelated genres.
+- **Lofi fan who asks for "intense" at 0.95.** Three quiet lofi songs (about 2.4 each) beat two loud intense songs that matched mood and energy perfectly (about 1.97).
+- **k-pop fan.** The genre is not in the catalog, so the best possible score was 2.0.
+- **"Pop " with a capital letter and a space.** Same list as "pop", so the typo cleanup works.
+- **Energy of 5.0 (a typo).** Every song got 0 energy points. No error was shown.
+- **Acoustic metal fan.** Same list as a plain metal fan. The `likes_acoustic` setting is never read.
+- **Empty profile and energy `"high"`.** Both were rejected with a clear message.
+
+### 2. Lowering the genre weight from 2.0 to 0.5
+
+I changed `GENRE_POINTS` for one run, without saving the change. Results:
+
+- **High-Energy Pop:** *Gym Hero* fell from #2 to #3. *Rooftop Lights* (happy, but indie pop) rose from #3 to #2. That is closer to what a "happy pop" fan expects.
+- **Chill Lofi:** *Spacewalk Thoughts* (chill, but ambient) moved from #4 to #3 and passed *Focus Flow*.
+- **Deep Intense Rock:** the same top 5 as before.
+- **Classical fan who wants 0.90:** *Nocturne in Grey* fell out of the top 5. The list became all loud songs. That fits the request for high energy, but the listener's favorite genre vanished.
+- **Calm rock fan (energy 0.30):** *Storm Runner* still ranked #1 at 1.89, because the rock and intense matches still outweighed the energy gap.
+
+### 3. Lowering genre to 0.5 and doubling energy to 2.0
+
+I ran this as a second one-off test. Now energy is worth more than the genre and mood bonuses combined (2.0 vs 1.5). Results:
+
+- **Calm rock fan:** *Storm Runner* still ranked #1 (2.28). *Porch Light Lullaby*, a perfect energy match, jumped to #2 (2.00). The list now has a real mix of loud and quiet songs.
+- **Pop, lofi and rock listeners:** the #1 songs stayed the same. Only the lower ranks shuffled.
+
+### What I learned from these tests
+
+Changing one weight changes who the system serves well. A high genre weight helps people with a single clear genre. A lower genre weight helps people who care more about the feel of the music. Neither setting is "correct". It depends on who the listener is.
+
+I did not test adding tempo or valence to the score. The scorer does not use them yet. That is the next experiment I would try.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- **Tiny catalog.** There are only 18 songs. Lofi has 3 and pop has 2. The other 13 genres have one song each, so most listeners get one good match and four filler songs.
+- **Genre is too loud.** A genre match (2.0) outweighs the whole energy score (at most 1.0). A calm rock fan still gets a loud rock song at #1.
+- **Exact matches only.** "pop" and "indie pop" count as different genres. "chill" and "relaxed" count as different moods.
+- **Unused data.** Valence, tempo, danceability and acousticness are loaded but ignored. The `likes_acoustic` setting does nothing.
+- **Quiet failures.** Unknown genres or moods, and energy outside 0 to 1, still return a confident-looking list with no warning.
+- **No diversity.** The top 5 can repeat one genre or artist.
+- **No lyrics, language or listening history.** The system only sees a few labels and numbers. It cannot learn from what a listener plays or skips.
+- **Filter bubble.** It only rewards what the listener already said they like, so it will not help them find something new.
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+See [model_card.md](model_card.md) for more detail.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
-
 [**Model Card**](model_card.md)
 
-Write 1 to 2 paragraphs here about what you learned:
+I learned that a recommender turns data into predictions by comparing numbers and labels. Here, each song gets points for matching a listener's genre, mood and energy. Then the points are sorted. The "prediction" is only as good as the choices behind it: which features count, how much each one is worth, and what the catalog contains. One choice, making genre worth 2 points, shaped almost every list. When I lowered it to 0.5, different songs rose to the top. Even the song that looked like a bug, *Gym Hero* for "Happy Pop" fans, was correct under my rules. Thus, my biggest learning moment during this project was recognizing how much the rules mattered and fixing them when they became problematic.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
-
-
+Additionally, I learned that bias shows up in small, quiet ways. Listeners with a common genre like lofi get full lists. Listeners with a rare genre get one match and four fillers. Listeners who care about feel more than genre get ignored. Nothing in the output warns them. The scoring also only rewards what a person already said they like, so it never helps them discover anything new. Real apps face the same problems at a much larger scale. They need more data, more signals and checks for fairness, not just a good score.
