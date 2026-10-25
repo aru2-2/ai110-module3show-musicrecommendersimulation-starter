@@ -39,26 +39,48 @@ MOOD_POINTS = 1.0
 ENERGY_POINTS = 1.0
 
 
+def _normalize(label: str) -> str:
+    """Lowercase a label and trim/collapse whitespace so 'Pop ' matches 'pop'."""
+    return " ".join(str(label).lower().split())
+
+
+def validate_prefs(user_prefs: Dict) -> None:
+    """Raise ValueError if the profile has no usable preference or a non-numeric energy."""
+    if not any(user_prefs.get(key) is not None for key in ("genre", "mood", "energy")):
+        raise ValueError("profile needs at least one of 'genre', 'mood' or 'energy'")
+
+    energy = user_prefs.get("energy")
+    if energy is not None and (isinstance(energy, bool) or not isinstance(energy, (int, float))):
+        raise ValueError(f"'energy' must be a number, got {energy!r}")
+
+
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """Score one song (max 4.0) and return it with a list of human-readable reasons."""
+    """Score one song (max 4.0) and return it with a list of human-readable reasons.
+
+    Genre, mood and energy are each optional in user_prefs; a missing one is skipped.
+    """
     score = 0.0
     reasons: List[str] = []
 
-    if song["genre"] == user_prefs["genre"]:
+    genre = user_prefs.get("genre")
+    if genre is not None and _normalize(song["genre"]) == _normalize(genre):
         score += GENRE_POINTS
         reasons.append(f"genre match: {song['genre']} (+{GENRE_POINTS:.1f})")
 
-    if song["mood"] == user_prefs["mood"]:
+    mood = user_prefs.get("mood")
+    if mood is not None and _normalize(song["mood"]) == _normalize(mood):
         score += MOOD_POINTS
         reasons.append(f"mood match: {song['mood']} (+{MOOD_POINTS:.1f})")
 
-    similarity = max(0.0, 1.0 - abs(float(song["energy"]) - user_prefs["energy"]))
-    energy_score = ENERGY_POINTS * similarity
-    score += energy_score
-    reasons.append(
-        f"energy {float(song['energy']):.2f} vs target {user_prefs['energy']:.2f} "
-        f"(+{energy_score:.2f})"
-    )
+    target_energy = user_prefs.get("energy")
+    if target_energy is not None:
+        similarity = max(0.0, 1.0 - abs(float(song["energy"]) - target_energy))
+        energy_score = ENERGY_POINTS * similarity
+        score += energy_score
+        reasons.append(
+            f"energy {float(song['energy']):.2f} vs target {target_energy:.2f} "
+            f"(+{energy_score:.2f})"
+        )
 
     return score, reasons
 
@@ -78,6 +100,7 @@ def load_songs(csv_path: str) -> List[Dict]:
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
     """Return the top k (song, score, reasons) tuples, sorted from highest to lowest score."""
+    validate_prefs(user_prefs)
     scored = [(song, *score_song(user_prefs, song)) for song in songs]
     ranked = sorted(scored, key=lambda item: item[1], reverse=True)
     return [(song, score, "; ".join(reasons)) for song, score, reasons in ranked[:k]]

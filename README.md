@@ -159,6 +159,133 @@ Loaded songs: 18
 
 ---
 
+## Recommendations for Multiple Profiles
+
+Output of `python -m src.main` for the three taste profiles (top 5 each):
+
+### High-Energy Pop
+
+```
+============================================================
+                      HIGH-ENERGY POP                       
+prefs: {'genre': 'pop', 'mood': 'happy', 'energy': 0.9, 'target_valence': 0.85, 'target_acousticness': 0.15, 'likes_acoustic': False}
+============================================================
+
+#1  Sunrise City by Neon Echo
+    Score: 3.92 / 4.00
+    Why:
+      - genre match: pop (+2.0)
+      - mood match: happy (+1.0)
+      - energy 0.82 vs target 0.90 (+0.92)
+
+#2  Gym Hero by Max Pulse
+    Score: 2.97 / 4.00
+    Why:
+      - genre match: pop (+2.0)
+      - energy 0.93 vs target 0.90 (+0.97)
+
+#3  Rooftop Lights by Indigo Parade
+    Score: 1.86 / 4.00
+    Why:
+      - mood match: happy (+1.0)
+      - energy 0.76 vs target 0.90 (+0.86)
+
+#4  Storm Runner by Voltline
+    Score: 0.99 / 4.00
+    Why:
+      - energy 0.91 vs target 0.90 (+0.99)
+
+#5  Solar Parade by Calle Sol
+    Score: 0.98 / 4.00
+    Why:
+      - energy 0.88 vs target 0.90 (+0.98)
+
+============================================================
+```
+
+### Chill Lofi
+
+```
+============================================================
+                         CHILL LOFI                         
+prefs: {'genre': 'lofi', 'mood': 'chill', 'energy': 0.3, 'target_valence': 0.55, 'target_acousticness': 0.75, 'likes_acoustic': True}
+============================================================
+
+#1  Library Rain by Paper Lanterns
+    Score: 3.95 / 4.00
+    Why:
+      - genre match: lofi (+2.0)
+      - mood match: chill (+1.0)
+      - energy 0.35 vs target 0.30 (+0.95)
+
+#2  Midnight Coding by LoRoom
+    Score: 3.88 / 4.00
+    Why:
+      - genre match: lofi (+2.0)
+      - mood match: chill (+1.0)
+      - energy 0.42 vs target 0.30 (+0.88)
+
+#3  Focus Flow by LoRoom
+    Score: 2.90 / 4.00
+    Why:
+      - genre match: lofi (+2.0)
+      - energy 0.40 vs target 0.30 (+0.90)
+
+#4  Spacewalk Thoughts by Orbit Bloom
+    Score: 1.98 / 4.00
+    Why:
+      - mood match: chill (+1.0)
+      - energy 0.28 vs target 0.30 (+0.98)
+
+#5  Porch Light Lullaby by Wren and Willow
+    Score: 1.00 / 4.00
+    Why:
+      - energy 0.30 vs target 0.30 (+1.00)
+
+============================================================
+```
+
+### Deep Intense Rock
+
+```
+============================================================
+                     DEEP INTENSE ROCK                      
+prefs: {'genre': 'rock', 'mood': 'intense', 'energy': 0.92, 'target_valence': 0.35, 'target_acousticness': 0.1, 'likes_acoustic': False}
+============================================================
+
+#1  Storm Runner by Voltline
+    Score: 3.99 / 4.00
+    Why:
+      - genre match: rock (+2.0)
+      - mood match: intense (+1.0)
+      - energy 0.91 vs target 0.92 (+0.99)
+
+#2  Gym Hero by Max Pulse
+    Score: 1.99 / 4.00
+    Why:
+      - mood match: intense (+1.0)
+      - energy 0.93 vs target 0.92 (+0.99)
+
+#3  Pulse Garden by Fractal Bloom
+    Score: 0.97 / 4.00
+    Why:
+      - energy 0.95 vs target 0.92 (+0.97)
+
+#4  Solar Parade by Calle Sol
+    Score: 0.96 / 4.00
+    Why:
+      - energy 0.88 vs target 0.92 (+0.96)
+
+#5  Iron Requiem by Grave Signal
+    Score: 0.95 / 4.00
+    Why:
+      - energy 0.97 vs target 0.92 (+0.95)
+
+============================================================
+```
+
+---
+
 ## Experiments You Tried
 
 Use this section to document the experiments you ran. For example:
