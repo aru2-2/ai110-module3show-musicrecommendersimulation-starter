@@ -38,6 +38,14 @@ GENRE_POINTS = 2.0
 MOOD_POINTS = 1.0
 ENERGY_POINTS = 1.0
 
+# Diversity penalty, applied while building the top-k list. For each song already
+# picked, a remaining candidate loses:
+#   -0.75 if it has the same artist
+#   -0.25 if it has the same genre
+# Penalties stack per repeat, so a third song by one artist loses 1.5.
+ARTIST_PENALTY = 0.75
+GENRE_PENALTY = 0.25
+
 
 def _normalize(label: str) -> str:
     """Lowercase a label and trim/collapse whitespace so 'Pop ' matches 'pop'."""
@@ -98,12 +106,51 @@ def load_songs(csv_path: str) -> List[Dict]:
     return songs
 
 
+def rerank_with_diversity(
+    scored: List[Tuple[Dict, float, List[str]]], k: int
+) -> List[Tuple[Dict, float, List[str]]]:
+    """Greedily pick k (song, score, reasons) tuples, penalizing repeats of a picked artist/genre.
+
+    Each round, every remaining song loses ARTIST_PENALTY per already-picked song by the
+    same artist and GENRE_PENALTY per already-picked song in the same genre. The best
+    adjusted score is picked next, so the first pick is always the plain top scorer.
+    """
+    remaining = list(scored)
+    picked: List[Tuple[Dict, float, List[str]]] = []
+    artist_counts: Dict[str, int] = {}
+    genre_counts: Dict[str, int] = {}
+
+    while remaining and len(picked) < k:
+        best = None
+        for song, score, reasons in remaining:
+            artist_hits = artist_counts.get(_normalize(song["artist"]), 0)
+            genre_hits = genre_counts.get(_normalize(song["genre"]), 0)
+            penalty = artist_hits * ARTIST_PENALTY + genre_hits * GENRE_PENALTY
+            adjusted = score - penalty
+            if best is None or adjusted > best[1]:
+                notes = list(reasons)
+                if artist_hits:
+                    notes.append(f"artist repeat: {song['artist']} (-{artist_hits * ARTIST_PENALTY:.2f})")
+                if genre_hits:
+                    notes.append(f"genre repeat: {song['genre']} (-{genre_hits * GENRE_PENALTY:.2f})")
+                best = (song, adjusted, notes)
+
+        picked.append(best)
+        remaining = [item for item in remaining if item[0] is not best[0]]
+        artist_key, genre_key = _normalize(best[0]["artist"]), _normalize(best[0]["genre"])
+        artist_counts[artist_key] = artist_counts.get(artist_key, 0) + 1
+        genre_counts[genre_key] = genre_counts.get(genre_key, 0) + 1
+
+    return picked
+
+
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
-    """Return the top k (song, score, reasons) tuples, sorted from highest to lowest score."""
+    """Return the top k (song, score, reasons) tuples, highest score first, with a diversity penalty."""
     validate_prefs(user_prefs)
     scored = [(song, *score_song(user_prefs, song)) for song in songs]
     ranked = sorted(scored, key=lambda item: item[1], reverse=True)
-    return [(song, score, "; ".join(reasons)) for song, score, reasons in ranked[:k]]
+    picked = rerank_with_diversity(ranked, k)
+    return [(song, score, "; ".join(reasons)) for song, score, reasons in picked]
 
 
 class Recommender:
@@ -127,12 +174,13 @@ class Recommender:
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
         """Return the k best-matching songs for the user, highest score first."""
         prefs = self._prefs(user)
-        ranked = sorted(
-            self.songs,
-            key=lambda s: score_song(prefs, asdict(s))[0],
-            reverse=True,
-        )
-        return ranked[:k]
+        scored = []
+        for song in self.songs:
+            song_dict = asdict(song)
+            scored.append((song_dict, *score_song(prefs, song_dict)))
+        ranked = sorted(scored, key=lambda item: item[1], reverse=True)
+        by_id = {song.id: song for song in self.songs}
+        return [by_id[d["id"]] for d, _, _ in rerank_with_diversity(ranked, k)]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
         """Return the scoring reasons for a song as a single "; "-joined string."""

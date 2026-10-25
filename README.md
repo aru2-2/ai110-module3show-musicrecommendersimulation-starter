@@ -57,7 +57,32 @@ Each song is judged on its own against the user's preferences. Categorical featu
 
 ### Ranking rule (whole list)
 
-A single song's score says nothing on its own, so the system scores **every** song in the catalog, sorts by score in descending order, and returns the top K, each with the reasons behind its score. Ties keep CSV order, because Python's sort is stable.
+A single song's score says nothing on its own, so the system scores **every** song in the catalog, sorts by score in descending order, and returns the top K, each with the reasons behind its score. Ties keep CSV order, because Python's sort is stable. The top K is then picked with the diversity penalty described below.
+
+### Diversity and fairness
+
+Ranking purely by score lets one artist or genre fill the whole top K (the filter-bubble bias below). The recommender counters this with a **diversity penalty** applied while the list is built:
+
+1. Pick the highest-scoring song first, with no penalty.
+2. Before each following pick, every remaining song loses points for each already-picked song it repeats:
+
+| Repeat | Penalty (per already-picked song) |
+|---|---|
+| Same artist | **-0.75** |
+| Same genre | **-0.25** |
+
+3. Pick the best adjusted score, update the counts, and repeat until K songs are chosen.
+
+Penalties stack, so a third song by the same artist loses 1.5. The penalty shows up in each song's reasons (for example `genre repeat: pop (-0.25)`), and the displayed score is the adjusted one, so a song's score can drop below what its genre, mood and energy matches alone would give.
+
+**Why this is fairer:**
+- **Artists:** a single prolific artist can't crowd out others whose songs score almost as well, so smaller artists get exposure.
+- **Listeners:** the top K covers more than one artist or genre, which gives the user some variety instead of five near-copies.
+
+**Trade-offs:**
+- The genre penalty is deliberately small (0.25) next to the 2.0 genre match, so it only reorders close calls. A user who wants only their favorite genre still gets it.
+- A relevant song can be pushed down in favor of a slightly weaker one from a different artist. Raise or lower `ARTIST_PENALTY` and `GENRE_PENALTY` in `src/recommender.py` to change how strict this is.
+- It does not fix the small catalog or the exact-match brittleness. It only changes how the top K is assembled from the scores.
 
 ### Expected biases
 
